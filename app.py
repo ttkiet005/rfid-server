@@ -8,24 +8,11 @@ import os
 app = Flask(__name__)
 
 # ======= Google Sheets =======
-SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive",
-]
+SERVICE_ACCOUNT_INFO = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
+          "https://www.googleapis.com/auth/drive"]
 
-# --- Load credentials ---
-# Nếu chạy local: đọc file nfcdoor.json
-# Nếu deploy Render: đọc từ biến môi trường SERVICE_ACCOUNT_JSON
-if os.path.exists("nfcdoor.json"):
-    with open("nfcdoor.json") as f:
-        service_account_info = json.load(f)
-else:
-    service_account_json = os.getenv("SERVICE_ACCOUNT_JSON")
-    if not service_account_json:
-        raise Exception("❌ Missing Google credentials. Set SERVICE_ACCOUNT_JSON env var.")
-    service_account_info = json.loads(service_account_json)
-
-creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
 client = gspread.authorize(creds)
 SPREADSHEET_ID = "1RBIXNP0O_EhoaIjoy-vsDkB6Jv_sy13NvsIy_UeVjas"
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
@@ -45,11 +32,6 @@ def rfid():
 
     sheet.append_row([timestamp, name, studentId, uid, result])
     return {"status": "ok"}
-
-
-@app.route("/", methods=["GET"])
-def home():
-    return "RFID server is running ✅"
 
 
 if __name__ == "__main__":
